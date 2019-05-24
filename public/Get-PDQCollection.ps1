@@ -48,7 +48,7 @@ function Get-PDQCollection {
         if ($PSCmdlet.ParameterSetName -eq 'ColName') {
             $Collections = @()
 
-            foreach ($col in $Collection) {
+            foreach ($col in $CollectionName) {
                 $sql = "SELECT CollectionId, Name, Type, ComputerCount
                         FROM Collections
                         WHERE Name LIKE '%%$col%%'"
@@ -59,7 +59,7 @@ function Get-PDQCollection {
         if ($PSCmdlet.ParameterSetName -eq 'ColID') {
             $Collections = @()
 
-            foreach ($i in $ID) {
+            foreach ($i in $CollectionID) {
                 $sql = "SELECT CollectionId, Name, Type, ComputerCount
                         FROM Collections
                         WHERE CollectionId = $i"
