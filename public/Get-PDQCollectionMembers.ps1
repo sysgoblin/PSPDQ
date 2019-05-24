@@ -48,10 +48,10 @@ function Get-PDQCollectionMembers {
                     SELECT CollectionComputers.ComputerId
                     FROM CollectionComputers
                     INNER JOIN Collections ON CollectionComputers.CollectionId = Collections.CollectionId
-                    WHERE Collections.Name = '$Collection' AND IsMember = 1)"
+                    WHERE Collections.Name = '$CollectionName' AND IsMember = 1)"
             $Collections = Invoke-Command -Computer $Server -ScriptBlock { $args[0] | sqlite3.exe $args[1] } -ArgumentList $sql, $DatabasePath
             
-            $nsql = "SELECT Name FROM Collections WHERE Name = '$Collection'"
+            $nsql = "SELECT Name FROM Collections WHERE Name = '$CollectionName'"
             $ColName = Invoke-Command -Computer $Server -ScriptBlock { $args[0] | sqlite3.exe $args[1] } -ArgumentList $nsql, $DatabasePath
         } 
 
@@ -61,11 +61,11 @@ function Get-PDQCollectionMembers {
                     WHERE Computers.ComputerId IN (
                     SELECT ComputerId
                     FROM CollectionComputers
-                    WHERE CollectionId = $ID AND IsMember = 1
+                    WHERE CollectionId = $CollectionID AND IsMember = 1
                     )"
             $Collections = Invoke-Command -Computer $Server -ScriptBlock { $args[0] | sqlite3.exe $args[1] } -ArgumentList $sql, $DatabasePath
         
-            $nsql = "SELECT Name FROM Collections WHERE CollectionId = $ID"
+            $nsql = "SELECT Name FROM Collections WHERE CollectionId = $CollectionID"
             $ColName = Invoke-Command -Computer $Server -ScriptBlock { $args[0] | sqlite3.exe $args[1] } -ArgumentList $nsql, $DatabasePath
         }
 
