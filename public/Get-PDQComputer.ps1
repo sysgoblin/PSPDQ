@@ -64,10 +64,9 @@ Author: Chris Bayliss
             $DatabasePath = $config.DBPath.PDQInventoryDB
         }
 
-        if ($PSBoundParameters.ContainsKey($Properties)) {
+        if ($PSBoundParameters.ContainsKey('Properties')) {
             $defaultProps = "ComputerId", "Name", "Model", "OSName", "OSServicePack"
-            $props = $Properties | ? { $_ -notin $defaultProps }
-            $allProps = $defaultProps + $props
+            $allProps = $defaultProps + $Properties
         } else {
             $allProps = "ComputerId", "Name", "Model", "OSName", "OSServicePack"
         }

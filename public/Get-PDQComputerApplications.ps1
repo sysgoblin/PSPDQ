@@ -75,8 +75,6 @@ function Get-PDQComputerApplications {
         }
         
         $results | ForEach-Object {
-            $Apps = Invoke-Command -Computer $Server -ScriptBlock { $args[0] | sqlite3.exe $args[1] } -ArgumentList $sql, $DatabasePath
-            $appsParsed += $Apps | ForEach-Object {
                 $p = $_ -split '\|'
                 [PSCustomObject]@{
                     ComputerId   = $p[0]
@@ -86,9 +84,7 @@ function Get-PDQComputerApplications {
                     Version      = $p[4]
                     InstallDate  = $p[5]
                     Uninstall    = $p[6]
-                }
-            }
-            
+                }            
         }
 
         return $appsParsed

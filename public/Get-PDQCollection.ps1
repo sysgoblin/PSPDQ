@@ -12,8 +12,6 @@ function Get-PDQCollection {
 
     .NOTES
         Author: Chris Bayliss
-        Version: 1.0
-        Date: 12/05/2019
     #>
 
     [CmdletBinding()]
@@ -31,7 +29,11 @@ function Get-PDQCollection {
         # Returns information on all collections
         [Parameter(Mandatory = $false, 
         ParameterSetName = 'All')] 
-        [switch]$All   
+        [switch]$All,
+        
+        [Parameter(Mandatory = $false)] 
+        [ValidateSet('Path', 'IsDrillDown', 'Created', 'Modified', 'ParentId', 'Type', 'Description', 'IsEnabled')]
+        [string[]]$Properties
     )
 
     process {
@@ -45,11 +47,18 @@ function Get-PDQCollection {
             $DatabasePath = $config.DBPath.PDQInventoryDB
         }
 
+        if ($PSBoundParameters.ContainsKey($Properties)) {
+            $defaultProps = 'CollectionId', 'Name', 'Type', 'ComputerCount'
+            $allProps = $defaultProps + $Properties
+        } else {
+            $allProps = 'CollectionId', 'Name', 'Type', 'ComputerCount'
+        }
+
         if ($PSCmdlet.ParameterSetName -eq 'ColName') {
             $Collections = @()
 
             foreach ($col in $CollectionName) {
-                $sql = "SELECT CollectionId, Name, Type, ComputerCount
+                $sql = "SELECT " + ($allProps -join ', ') + "
                         FROM Collections
                         WHERE Name LIKE '%%$col%%'"
                 $Collections += Invoke-Command -Computer $Server -ScriptBlock { $args[0] | sqlite3.exe $args[1] } -ArgumentList $sql, $DatabasePath
@@ -60,7 +69,7 @@ function Get-PDQCollection {
             $Collections = @()
 
             foreach ($i in $CollectionID) {
-                $sql = "SELECT CollectionId, Name, Type, ComputerCount
+                $sql = "SELECT " + ($allProps -join ', ') + "
                         FROM Collections
                         WHERE CollectionId = $i"
                 $Collections += Invoke-Command -Computer $Server -ScriptBlock { $args[0] | sqlite3.exe $args[1] } -ArgumentList $sql, $DatabasePath
@@ -68,19 +77,19 @@ function Get-PDQCollection {
         } 
         
         if ($PSCmdlet.ParameterSetName -eq 'All') {
-            $sql = "SELECT CollectionId, Name, Type, ComputerCount
+            $sql = "SELECT " + ($allProps -join ', ') + "
             FROM Collections"
             $Collections = Invoke-Command -Computer $Server -ScriptBlock { $args[0] | sqlite3.exe $args[1] } -ArgumentList $sql, $DatabasePath
         }
 
-        $collectionsParsed += $Collections | ForEach-Object {
-            $p = $_ -split '\|'
-            [PSCustomObject]@{
-                CollectionID   = [int]$p[0]
-                CollectionName = $p[1]
-                CollectionType = $p[2]
-                ComputerCount  = [int]$p[3]
+        $collectionsParsed = @()
+        $Collections | % {
+            $propsParsed = $_ -split '\|'
+            $colObj = New-Object pscustomobject
+            for ($p=0; $p -lt $allProps.count; $p++) {
+                $colObj | Add-Member NoteProperty $allProps[$p] $propsParsed[$p]
             }
+            $collectionsParsed += $colObj
         }
             
         return $collectionsParsed
