@@ -10,7 +10,11 @@ function Get-PDQSchedule {
         # Returns information for computer(s) where the specified user is or has been active
         [Parameter(Mandatory = $false, 
         ParameterSetName = 'Package')] 
-        [string[]]$PackageName,   
+        [string[]]$ScheduleName,   
+
+        [Parameter(Mandatory = $false, 
+        ParameterSetName = 'Package')] 
+        [int[]]$ScheduleId, 
 
         [Parameter(Mandatory = $false)] 
         [ValidateSet('')]
