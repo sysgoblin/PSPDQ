@@ -11,8 +11,6 @@ function Get-PDQCollectionMembers {
 
     .NOTES
         Author: Chris Bayliss
-        Version: 1.0
-        Date: 12/05/2019
     #>
 
     
@@ -28,7 +26,15 @@ function Get-PDQCollectionMembers {
         [Parameter(Mandatory = $false, 
             ParameterSetName = 'ColID', 
             ValueFromPipelineByPropertyName)] 
-        [int]$CollectionID
+        [int]$CollectionID,
+
+        [Parameter(Mandatory = $false)] 
+        [ValidateSet('Added', 'BootTime', 'Manufacturer', 'Memory', 'SerialNumber', 'OSArchitecture', 
+        'IPAddress', 'CurrentUser', 'MacAddress', 'DotNetVersions', 'NeedsReboot', 'PSVersion', 'ADLogonServer', 
+        'SMBv1Enabled', 'SimpleReasonForReboot', 'IsOnline', 'OSVersion', 'OSSerialNumber', 'SystemDrive', 
+        'IEVersion', 'HeartbeatDate', 'ADDisplayName', 'BiosVersion', 'BiosManufacturer', 'Chassis', 'ADLogonServer', 
+        'AddedFrom', 'ADIsDisabled')]
+        [string[]]$Properties   
     )
 
     process {
@@ -42,62 +48,53 @@ function Get-PDQCollectionMembers {
             $DatabasePath = $config.DBPath.PDQInventoryDB
         }
 
+        if ($PSBoundParameters.ContainsKey('Properties')) {
+            
+            $defaultProps = "ComputerId", "Name", "Model", "OSName", "OSServicePack"
+            $allProps = $defaultProps + $Properties
+        } else {
+            $allProps = "ComputerId", "Name", "Model", "OSName", "OSServicePack"
+        }
+
         if ($PSCmdlet.ParameterSetName -eq 'ColName') {
-            $sql = "SELECT Computers.ComputerId, Computers.Name, Computers.Added, Computers.BootTime, Computers.Manufacturer, Computers.Model, Computers.Memory, Computers.OSName, Computers.OSServicePack, Computers.SerialNumber, Computers.OSArchitecture, Computers.IPAddress, Computers.CurrentUser, Computers.MacAddress, Computers.DotNetVersions, Computers.NeedsReboot, Computers.PSVersion, Computers.ADLogonServer, Computers.SMBv1Enabled, Computers.SimpleReasonForReboot, Computers.IsOnline
+            $sql = "SELECT " + ($allProps -join ', ') + "
                     FROM Computers
                     WHERE Computers.ComputerId IN (
                     SELECT CollectionComputers.ComputerId
                     FROM CollectionComputers
                     INNER JOIN Collections ON CollectionComputers.CollectionId = Collections.CollectionId
                     WHERE Collections.Name = '$CollectionName' AND IsMember = 1)"
-            $Collections = Invoke-Command -Computer $Server -ScriptBlock { $args[0] | sqlite3.exe $args[1] } -ArgumentList $sql, $DatabasePath
+            $Computers = Invoke-Command -Computer $Server -ScriptBlock { $args[0] | sqlite3.exe $args[1] } -ArgumentList $sql, $DatabasePath
             
             $nsql = "SELECT Name FROM Collections WHERE Name = '$CollectionName'"
             $ColName = Invoke-Command -Computer $Server -ScriptBlock { $args[0] | sqlite3.exe $args[1] } -ArgumentList $nsql, $DatabasePath
         } 
 
         if ($PSCmdlet.ParameterSetName -eq 'ColID') {
-            $sql = "SELECT Computers.ComputerId, Computers.Name, Computers.Added, Computers.BootTime, Computers.Manufacturer, Computers.Model, Computers.Memory, Computers.OSName, Computers.OSServicePack, Computers.SerialNumber, Computers.OSArchitecture, Computers.IPAddress, Computers.CurrentUser, Computers.MacAddress, Computers.DotNetVersions, Computers.NeedsReboot, Computers.PSVersion, Computers.ADLogonServer, Computers.SMBv1Enabled, Computers.SimpleReasonForReboot, Computers.IsOnline
+            $sql = "SELECT " + ($allProps -join ', ') + "
                     FROM Computers
                     WHERE Computers.ComputerId IN (
                     SELECT ComputerId
                     FROM CollectionComputers
                     WHERE CollectionId = $CollectionID AND IsMember = 1
                     )"
-            $Collections = Invoke-Command -Computer $Server -ScriptBlock { $args[0] | sqlite3.exe $args[1] } -ArgumentList $sql, $DatabasePath
+            $Computers = Invoke-Command -Computer $Server -ScriptBlock { $args[0] | sqlite3.exe $args[1] } -ArgumentList $sql, $DatabasePath
         
             $nsql = "SELECT Name FROM Collections WHERE CollectionId = $CollectionID"
             $ColName = Invoke-Command -Computer $Server -ScriptBlock { $args[0] | sqlite3.exe $args[1] } -ArgumentList $nsql, $DatabasePath
         }
 
-        $collectionsParsed = $Collections | ForEach-Object {
-            $p = $_ -split '\|'
-            [PSCustomObject]@{
-                ComputerId            = $p[0]
-                Computer              = $p[1]
-                Added                 = $p[2]
-                BootTime              = $p[3]
-                Manufacturer          = $p[4]
-                Model                 = $p[5]
-                Memory                = $p[6]
-                OperatingSystem       = $p[7]
-                ServicePack           = $p[8]
-                SerialNumber          = $p[9]
-                OSArchitecture        = $p[10]
-                IPAddress             = $p[11]
-                CurrentUser           = $p[12]
-                MacAddress            = $p[13]
-                DotNetVersions        = $p[14]
-                NeedsReboot           = if ($p[15] -eq '1') { "Yes" } else { "No" }
-                PSVersion             = $p[16]
-                ADLogonServer         = $p[17]
-                SMBv1Enabled          = $p[18]
-                SimpleReasonForReboot = $p[19]
-                Online                = if ($p[20] -eq '1') { "Yes" } else { "No" }
+        $computersParsed = @()
+        $Computers | % {
+            $propsParsed = $_ -split '\|'
+            $compObj = New-Object pscustomobject
+            for ($p=0; $p -lt $allProps.count; $p++) {
+                $compObj | Add-Member NoteProperty $allProps[$p] $propsParsed[$p]
             }
+            $computersParsed += $compObj
         }
             
         Write-Output "`r`n`tMembers of Collection: $ColName `r`n"
-        return $collectionsParsed
+        return $computersParsed
     }
 }

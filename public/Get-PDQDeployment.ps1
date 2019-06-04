@@ -137,6 +137,6 @@ function Get-PDQDeployment {
             }
         }
 
-        $DeploymentsParsed
+        return $DeploymentsParsed
     }
 }
