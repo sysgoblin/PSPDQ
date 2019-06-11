@@ -12,6 +12,8 @@ git clone https://github.com/sysgoblin/PSPDQ
 cd PSPDQ
 Import-Module .\PSPDQ.psm1
 ```
+And then install sqlite3. `https://www.sqlite.org/download.html`
+
 The first cmdlet you should run is: `Set-PSPDQConfig` to configure the PDQ Deploy and Inventory server information.
 ```Powershell
 Set-PSPDQConfig -PDQDeployServer PDQSERVER1 -PDQInventoryServer PDQSERVER2 -PDQDeployDBPath "C:\ProgramData\PDQ Deploy\Database.db" -PDQInventoryDBPath "C:\ProgramData\PDQ Inventory\Database.db"
