@@ -36,6 +36,7 @@ Author: Chris Bayliss
         # Returns information for specified computer
         [Parameter(Mandatory = $false, 
         ParameterSetName = 'Computer', 
+        ValueFromPipelineByPropertyName,
         Position = 0)] 
         [string[]]$Computer,
 
