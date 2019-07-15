@@ -34,7 +34,7 @@ Date: 12/05/2019
         ParameterSetName = 'Comp', 
         ValueFromPipelineByPropertyName,
         Position = 0)] 
-        [string]$Computer,
+        [string][alias('Name')]$Computer,
 
         [Parameter(Mandatory = $false, 
         ParameterSetName = 'HF', 

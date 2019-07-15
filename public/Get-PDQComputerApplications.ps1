@@ -27,7 +27,7 @@ function Get-PDQComputerApplications {
         ValueFromPipelineByPropertyName, 
         ParameterSetName = 'Comp',
         Position = 0)] 
-        [string[]]$Computer,
+        [string[]][alias('Name')]$Computer,
 
         # Application to search for
         [Parameter(Mandatory = $false, 

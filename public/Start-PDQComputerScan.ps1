@@ -28,7 +28,7 @@ Date: 12/05/2019
         [Parameter(Mandatory = $true, 
             ValueFromPipelineByPropertyName,
             Position = 0)]
-        [string[]]$Computer,
+        [string[]][alias('Name')]$Computer,
 
         [Parameter(Mandatory = $false,  
             Position = 1)]

@@ -26,7 +26,7 @@ function Get-PDQDeployment {
         [Parameter(Mandatory = $false, 
         ParameterSetName = 'Comp', 
         ValueFromPipelineByPropertyName)] 
-        [string[]]$Computer,
+        [string[]][alias('Name')]$Computer,
 
         # Returns deployment data for specified package
         [Parameter(Mandatory = $false, 

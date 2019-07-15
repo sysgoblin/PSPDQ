@@ -33,7 +33,7 @@ Date: 12/05/2019
         [Parameter(Mandatory = $false, 
         ParameterSetName = 'Default', 
         ValueFromPipelineByPropertyName)] 
-        [string[]]$Computer
+        [string[]][alias('Name')]$Computer
     )
 
     process {

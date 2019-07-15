@@ -38,7 +38,7 @@ Author: Chris Bayliss
         ParameterSetName = 'Computer', 
         ValueFromPipelineByPropertyName,
         Position = 0)] 
-        [string[]]$Computer,
+        [string[]][alias('Name')]$Computer,
 
         # Returns information for computer(s) where the specified user is or has been active
         [Parameter(Mandatory = $false, 
