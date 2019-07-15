@@ -32,13 +32,13 @@ Date: 12/05/2019
     param (
         [Parameter(Mandatory = $false, 
         ParameterSetName = 'Comp', 
-        ValueFromPipelineByPropertyName)] 
+        ValueFromPipelineByPropertyName,
+        Position = 0)] 
         [string]$Computer,
 
         [Parameter(Mandatory = $false, 
         ParameterSetName = 'HF', 
-        ValueFromPipelineByPropertyName,
-        Position = 0)] 
+        ValueFromPipelineByPropertyName)] 
         [string]$HotFix
     )
     
