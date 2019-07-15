@@ -44,7 +44,7 @@ Date: 12/05/2019
     param (
         [Parameter(Mandatory = $true, 
             ValueFromPipelineByPropertyName)] 
-        [string[]]$Computer,
+        [string[]][alias('Name')]$Computer,
 
         [Parameter(Mandatory = $true, 
             ParameterSetName = 'ID', 
