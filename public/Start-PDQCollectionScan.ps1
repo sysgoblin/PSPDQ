@@ -7,11 +7,14 @@ Scan target collection with specified scan profile.
 Scan the target collection with the scan profile specified. By default the "Standard" profile will be used.
 Requires PDQ Inventory client or server to be installed locally.
 
-.PARAMETER Computer
+.PARAMETER Collection
 Name of collection to scan
 
 .PARAMETER ScanProfile
 Profile to scan the target computer with
+
+.PARAMETER Credential
+Specifies a user account that has permissions to perform this action.
 
 .EXAMPLE
 Start-PDQCollectionScan -Collection "Online Systems" -ScanProfile "Standard"
@@ -23,25 +26,40 @@ Version: 1.0
 Date: 12/05/2019
 #>
 
-    [CmdletBinding(DefaultParameterSetName = 'Default')]
+    [CmdletBinding()]
     param (
-        [Parameter(Mandatory = $true, 
-            ParameterSetName = 'Default', 
-            Position = 0)] 
+        [Parameter(Mandatory = $true,
+            Position = 0,
+            ValueFromPipelinebyPropertyName)]
+        [Alias('Name')]
         [string[]]$Collection,
 
-        [Parameter(Mandatory = $false, 
-            ParameterSetName = 'Default', 
-            Position = 1)] 
-        [string]$ScanProfile = "Standard"
-    )
+        [Parameter(Position = 1)]
+        [string]$ScanProfile = "Standard",
 
-    process {
-        if (Get-Command pdqinventory.exe -ErrorAction SilentlyContinue) {
-            PDQInventory.exe ScanCollection -ScanProfile $ScanProfile -Computers $Computer
+        [PSCredential]$Credential
+    )
+    begin {
+        if (!(Test-Path -Path "$($env:AppData)\pspdq\config.json")) {
+            Throw "PSPDQ Configuration file not found in `"$($env:AppData)\pspdq\config.json`", please run Set-PSPDQConfig to configure module settings."
         }
+
         else {
-            Throw "PDQInventory.exe not in path or not installed."
+            $config = Get-Content "$($env:AppData)\pspdq\config.json" | ConvertFrom-Json
+            $Server = $config.Server.PDQInventoryServer
         }
     }
+
+    process {
+
+        $icmParams = @{
+            Computer     = $Server
+            ScriptBlock  = { PDQInventory.exe ScanCollections -ScanProfile $using:ScanProfile -Collections $using:Collection }
+            ArgumentList = $ScanProfile, $Collection
+        }
+        if ($Credential) { $icmParams['Credential'] = $Credential }
+        Invoke-Command @icmParams
+    }
+
 }
+
