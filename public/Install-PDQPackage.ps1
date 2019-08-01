@@ -144,12 +144,12 @@ Date: 12/05/2019
 
         foreach ($pkg in $Package) {
 
-            if ($Credential) { $icmParams['Credential'] = $Credential }
             $icmParams = @{
                 Computer     = $Server
                 ScriptBlock  = { PDQDeploy.exe Deploy -Package $Using:pkg -Targets $using:Computer }
                 ArgumentList = $pkg, $computer
             }
+            if ($Credential) { $icmParams['Credential'] = $Credential }
             Write-Verbose "Deploying $pkg to Target $Computer"
             Invoke-Command @icmParams
         }
