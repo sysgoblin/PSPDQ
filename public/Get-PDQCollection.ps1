@@ -6,6 +6,9 @@ function Get-PDQCollection {
     .DESCRIPTION
         Returns information on either all or specified PDQ Inventory collections
 
+    .PARAMETER Credential
+        Specifies a user account that has permissions to perform this action.
+
     .EXAMPLE
         Get-PDQCollection -CollectionName "Online"
         Returns information on all collections matching the string "Online"
@@ -17,30 +20,33 @@ function Get-PDQCollection {
     [CmdletBinding()]
     param (
         # Collection name to query
-        [Parameter(Mandatory = $false, 
-        ParameterSetName = 'ColName')] 
+        [Parameter(Mandatory = $false,
+            ParameterSetName = 'ColName')]
         [string[]]$CollectionName,
 
         #Collection ID number to query
-        [Parameter(Mandatory = $false, 
-        ParameterSetName = 'ColID')] 
-        [int[]]$CollectionID,  
+        [Parameter(Mandatory = $false,
+            ParameterSetName = 'ColID')]
+        [int[]]$CollectionID,
 
         # Returns information on all collections
-        [Parameter(Mandatory = $false, 
-        ParameterSetName = 'All')] 
+        [Parameter(Mandatory = $false,
+            ParameterSetName = 'All')]
         [switch]$All,
-        
-        [Parameter(Mandatory = $false)] 
+
+        [Parameter(Mandatory = $false)]
         [ValidateSet('Path', 'IsDrillDown', 'Created', 'Modified', 'ParentId', 'Type', 'Description', 'IsEnabled')]
-        [string[]]$Properties
+        [string[]]$Properties,
+
+        [PSCredential]$Credential
     )
 
     process {
 
         if (!(Test-Path -Path "$($env:AppData)\pspdq\config.json")) {
             Throw "PSPDQ Configuration file not found in `"$($env:AppData)\pspdq\config.json`", please run Set-PSPDQConfig to configure module settings."
-        } else {
+        }
+        else {
             $config = Get-Content "$($env:AppData)\pspdq\config.json" | ConvertFrom-Json
 
             $Server = $config.Server.PDQInventoryServer
@@ -50,7 +56,8 @@ function Get-PDQCollection {
         if ($PSBoundParameters.ContainsKey($Properties)) {
             $defaultProps = 'CollectionId', 'Name', 'Type', 'ComputerCount'
             $allProps = $defaultProps + $Properties
-        } else {
+        }
+        else {
             $allProps = 'CollectionId', 'Name', 'Type', 'ComputerCount'
         }
 
@@ -61,10 +68,18 @@ function Get-PDQCollection {
                 $sql = "SELECT " + ($allProps -join ', ') + "
                         FROM Collections
                         WHERE Name LIKE '%%$col%%'"
-                $Collections += Invoke-Command -Computer $Server -ScriptBlock { $args[0] | sqlite3.exe $args[1] } -ArgumentList $sql, $DatabasePath
+
+                $icmParams = @{
+                    Computer     = $Server
+                    ScriptBlock  = { $args[0] | sqlite3.exe $args[1] }
+                    ArgumentList = $sql, $DatabasePath
+                }
+                if ($Credential) { $icmParams['Credential'] = $Credential }
+
+                $Collections += Invoke-Command @icmParams
             }
-        } 
-        
+        }
+
         if ($PSCmdlet.ParameterSetName -eq 'ColID') {
             $Collections = @()
 
@@ -72,26 +87,41 @@ function Get-PDQCollection {
                 $sql = "SELECT " + ($allProps -join ', ') + "
                         FROM Collections
                         WHERE CollectionId = $i"
-                $Collections += Invoke-Command -Computer $Server -ScriptBlock { $args[0] | sqlite3.exe $args[1] } -ArgumentList $sql, $DatabasePath
+
+                $icmParams = @{
+                    Computer     = $Server
+                    ScriptBlock  = { $args[0] | sqlite3.exe $args[1] }
+                    ArgumentList = $sql, $DatabasePath
+                }
+                if ($Credential) { $icmParams['Credential'] = $Credential }
+
+                $Collections += Invoke-Command @icmParams
             }
-        } 
-        
+        }
+
         if ($PSCmdlet.ParameterSetName -eq 'All') {
             $sql = "SELECT " + ($allProps -join ', ') + "
             FROM Collections"
-            $Collections = Invoke-Command -Computer $Server -ScriptBlock { $args[0] | sqlite3.exe $args[1] } -ArgumentList $sql, $DatabasePath
+
+            $icmParams = @{
+                Computer     = $Server
+                ScriptBlock  = { $args[0] | sqlite3.exe $args[1] }
+                ArgumentList = $sql, $DatabasePath
+            }
+            if ($Credential) { $icmParams['Credential'] = $Credential }
+            $Collections = Invoke-Command @icmParams
         }
 
         $collectionsParsed = @()
-        $Collections | % {
+        $Collections | ForEach-Object {
             $propsParsed = $_ -split '\|'
             $colObj = New-Object pscustomobject
-            for ($p=0; $p -lt $allProps.count; $p++) {
+            for ($p = 0; $p -lt $allProps.count; $p++) {
                 $colObj | Add-Member NoteProperty $allProps[$p] $propsParsed[$p]
             }
             $collectionsParsed += $colObj
         }
-            
-        return $collectionsParsed
+
+        $collectionsParsed
     }
 }
