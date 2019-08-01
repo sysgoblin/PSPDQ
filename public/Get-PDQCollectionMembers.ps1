@@ -20,7 +20,8 @@ function Get-PDQCollectionMembers {
         # Name of collection to return members of
         [Parameter(Mandatory = $false,
             ParameterSetName = 'ColName',
-            ValueFromPipelineByPropertyName)]
+            ValueFromPipelineByPropertyName,
+            Position = 0)]
         [string]$CollectionName,
 
         # ID of collection to return members of
