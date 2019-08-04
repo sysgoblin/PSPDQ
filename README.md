@@ -31,13 +31,17 @@ Get the basic computer details of each computer the last 10 deployments went to:
 ```powershell
 Get-PDQDeployment -Range 10 | Get-PDQComputer
 ```
-
-Get the applications installed on those computers instead:
+Get basic details on a computer and see if it's online:
 ```powershell
-Get-PDQDeployment -Range 10 | Get-PDQComputerApplications
+Get-PDQComputer -Computer WK01 -Properties IsOnline
 ```
 
-Or maybe get patches for each computer installed in the past 3 days because why not?
+Get the applications installed on some computers:
 ```powershell
-Get-PDQDeployment -Range 10 | Get-PDQHotFix | ? InstalledOn -le (Get-Date).AddDays(-3)
+Get-PDQComputerApplications -Computer WK01, WK02
+```
+
+Or maybe get the computers from the past 100 deployments and then get the patches for each that were installed in the past 3 days because why not?
+```powershell
+Get-PDQDeployment -Range 100 | Get-PDQHotFix | ? InstalledOn -le (Get-Date).AddDays(-3)
 ```
