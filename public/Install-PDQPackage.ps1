@@ -1,5 +1,5 @@
 function Install-PDQPackage {
-    <#
+<#
 .SYNOPSIS
 Triggers deployment of PDQ package to specified target(s)
 
@@ -46,34 +46,27 @@ Date: 12/05/2019
     [CmdletBinding(SupportsShouldProcess = $True)]
     param (
         [Parameter(Mandatory = $true,
-            ValueFromPipelineByPropertyName)]
+        ValueFromPipelineByPropertyName)]
         [string[]][alias('Name')]$Computer,
 
         [Parameter(Mandatory = $true,
-            ParameterSetName = 'ID',
-            ValueFromPipelineByPropertyName)]
+        ParameterSetName = 'ID',
+        ValueFromPipelineByPropertyName)]
         [int[]]$PackageID,
 
         [Parameter(Mandatory = $true,
-            ParameterSetName = 'Name',
-            ValueFromPipelineByPropertyName)]
+        ParameterSetName = 'Name',
+        ValueFromPipelineByPropertyName)]
         [string[]]$PackageName,
 
         [PSCredential]$Credential
     )
 
+    begin {
+        Get-PSPDQConfig
+    }
+
     process {
-
-        if (!(Test-Path -Path "$($env:AppData)\pspdq\config.json")) {
-            Throw "PSPDQ Configuration file not found in `"$($env:AppData)\pspdq\config.json`", please run Set-PSPDQConfig to configure module settings."
-        }
-        else {
-            $config = Get-Content "$($env:AppData)\pspdq\config.json" | ConvertFrom-Json
-
-            $Server = $config.Server.PDQDeployServer
-            $DatabasePath = $config.DBPath.PDQDeployDB
-        }
-
         if ($PSCmdlet.ParameterSetName -eq 'ID') {
             $Package = @()
 

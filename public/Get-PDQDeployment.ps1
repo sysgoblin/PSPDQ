@@ -1,73 +1,67 @@
 function Get-PDQDeployment {
-    <#
-    .SYNOPSIS
-        Get details on PDQ Deploy deployment
+<#
+.SYNOPSIS
+Get details on PDQ Deploy deployment
 
-    .DESCRIPTION
-        Retreives details on PDQ Deploy deployments for the specified computer, deployment id, or package
-    .PARAMETER Credential
-        Specifies a user account that has permissions to perform this action.
+.DESCRIPTION
+Retreives details on PDQ Deploy deployments for the specified computer, deployment id, or package
+.PARAMETER Credential
+Specifies a user account that has permissions to perform this action.
 
-    .EXAMPLE
-        Get-PDQDeployment -PackageID 1
-        Returns deployment data for the package with the ID of 1
+.EXAMPLE
+Get-PDQDeployment -PackageID 1
+Returns deployment data for the package with the ID of 1
 
-    .EXAMPLE
-        Get-PDQPackage -PackageName "7-Zip" | Get-PDQDeployment
-        Returns deployment data for applications containing "7-Zip" in the name
+.EXAMPLE
+Get-PDQPackage -PackageName "7-Zip" | Get-PDQDeployment
+Returns deployment data for applications containing "7-Zip" in the name
 
-    .NOTES
-        Author: Chris Bayliss
-        Version: 1.0
-        Date: 12/05/2019
-    #>
+.NOTES
+Author: Chris Bayliss
+Version: 1.0
+Date: 12/05/2019
+#>
 
     [CmdletBinding(SupportsShouldProcess = $True)]
     param (
         # Will return all deployment data related to target
         [Parameter(Mandatory = $false,
-            ParameterSetName = 'Comp',
-            ValueFromPipelineByPropertyName)]
+        ParameterSetName = 'Comp',
+        ValueFromPipelineByPropertyName)]
         [string[]][alias('Name')]$Computer,
 
         # Returns deployment data for specified package
         [Parameter(Mandatory = $false,
-            ParameterSetName = 'Name',
-            ValueFromPipelineByPropertyName)]
+        ParameterSetName = 'Name',
+        ValueFromPipelineByPropertyName)]
         [string]$PackageName,
 
         # Returns deployment data for specified package
         [Parameter(Mandatory = $false,
-            ParameterSetName = 'ID',
-            ValueFromPipelineByPropertyName)]
+        ParameterSetName = 'ID',
+        ValueFromPipelineByPropertyName)]
         [int]$PackageID,
 
         # Returns deployment data for specified deployment id
         [Parameter(Mandatory = $false,
-            ParameterSetName = 'DepID',
-            ValueFromPipelineByPropertyName)]
+        ParameterSetName = 'DepID',
+        ValueFromPipelineByPropertyName)]
         [int]$DeploymentID,
 
         # Returns most recent deployment information for up to the entered number
         [Parameter(Mandatory = $false,
-            ParameterSetName = 'Recent')]
+        ParameterSetName = 'Recent')]
         [int]$Recent = 10,
 
+        [Parameter(Mandatory = $false)]
         [PSCredential]$Credential
     )
 
+    begin {
+        Get-PSPDQConfig
+    }
+
     process {
-
-        if (!(Test-Path -Path "$($env:AppData)\pspdq\config.json")) {
-            Throw "PSPDQ Configuration file not found in `"$($env:AppData)\pspdq\config.json`", please run Set-PSPDQConfig to configure module settings."
-        }
-        else {
-            $config = Get-Content "$($env:AppData)\pspdq\config.json" | ConvertFrom-Json
-
-            $Server = $config.Server.PDQDeployServer
-            $DatabasePath = $config.DBPath.PDQDeployDB
-        }
-
         $Deployments = @()
 
         if ($PSCmdlet.ParameterSetName -eq 'Comp') {

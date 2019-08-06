@@ -4,16 +4,16 @@ function Get-PDQSchedule {
     param (
         # Returns all information
         [Parameter(Mandatory = $false,
-            ParameterSetName = 'All')]
+        ParameterSetName = 'All')]
         [switch]$All,
 
         # Returns information for computer(s) where the specified user is or has been active
         [Parameter(Mandatory = $false,
-            ParameterSetName = 'Package')]
+        ParameterSetName = 'Package')]
         [string[]]$ScheduleName,
 
         [Parameter(Mandatory = $false,
-            ParameterSetName = 'Package')]
+        ParameterSetName = 'Package')]
         [int[]]$ScheduleId,
 
         [Parameter(Mandatory = $false)]
@@ -23,18 +23,11 @@ function Get-PDQSchedule {
         [PSCredential]$Credential
     )
 
+    begin {
+        Get-PSPDQConfig
+    }
+
     process {
-
-        if (!(Test-Path -Path "$($env:AppData)\pspdq\config.json")) {
-            Throw "PSPDQ Configuration file not found in `"$($env:AppData)\pspdq\config.json`", please run Set-PSPDQConfig to configure module settings."
-        }
-        else {
-            $config = Get-Content "$($env:AppData)\pspdq\config.json" | ConvertFrom-Json
-
-            $Server = $config.Server.PDQDeployServer
-            $DatabasePath = $config.DBPath.PDQDeployDB
-        }
-
         if ($PSBoundParameters.ContainsKey('Properties')) {
             $defaultProps = "Schedules.ScheduleId", "Schedules.Name", "Packages.PackageId", "Packages.Name", "ScheduleTriggers.TriggerType", "ScheduleTriggers.IsEnabled"
             $allProps = $defaultProps + $Properties

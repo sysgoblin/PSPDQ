@@ -1,5 +1,5 @@
 function Get-PDQHotFixes {
-    <#
+<#
 .SYNOPSIS
 Get information on hotfix/patches installed on specified target
 
@@ -35,30 +35,24 @@ Date: 12/05/2019
     [CmdletBinding(DefaultParameterSetName = 'Default')]
     param (
         [Parameter(Mandatory = $false,
-            ParameterSetName = 'Comp',
-            ValueFromPipelineByPropertyName,
-            Position = 0)]
+        ParameterSetName = 'Comp',
+        ValueFromPipelineByPropertyName,
+        Position = 0)]
         [string][alias('Name')]$Computer,
 
         [Parameter(Mandatory = $false,
-            ParameterSetName = 'HF',
-            ValueFromPipelineByPropertyName)]
+        ParameterSetName = 'HF',
+        ValueFromPipelineByPropertyName)]
         [string]$HotFix,
 
         [PSCredential]$Credential
     )
 
+    begin {
+        Get-PSPDQConfig
+    }
+
     process {
-        if (!(Test-Path -Path "$($env:AppData)\pspdq\config.json")) {
-            Throw "PSPDQ Configuration file not found in `"$($env:AppData)\pspdq\config.json`", please run Set-PSPDQConfig to configure module settings."
-        }
-        else {
-            $config = Get-Content "$($env:AppData)\pspdq\config.json" | ConvertFrom-Json
-
-            $Server = $config.Server.PDQInventoryServer
-            $DatabasePath = $config.DBPath.PDQInventoryDB
-        }
-
         if ($PSCmdlet.ParameterSetName -eq 'Comp') {
             $sql = "SELECT hotfixes.hotfixid, hotfixes.computerid, computers.name, hotfixes.name, hotfixes.Description, hotfixes.InstalledOn, hotfixes.InstalledBy, hotfixes.Program, hotfixes.Version, hotfixes.Publisher, hotfixes.HelpLink
             FROM HotFixes

@@ -1,57 +1,52 @@
 function Get-PDQComputerApplications {
-    <#
-    .SYNOPSIS
-        Returns applications installed on target machine or all machines with application installed
+<#
+.SYNOPSIS
+Returns applications installed on target machine or all machines with application installed
 
-    .DESCRIPTION
-        Returns applications installed on target machine or all machines with application installed
+.DESCRIPTION
+Returns applications installed on target machine or all machines with application installed
 
-    .PARAMETER Credential
-        Specifies a user account that has permissions to perform this action.
+.PARAMETER Credential
+Specifies a user account that has permissions to perform this action.
 
-    .EXAMPLE
-        Get-PDQComputerApplications -Computer WK01
-        Returns applications installed on WK01
+.EXAMPLE
+Get-PDQComputerApplications -Computer WK01
+Returns applications installed on WK01
 
-    .EXAMPLE
-        Get-PDQComputerApplications -Application Chrome
-        Returns a list of machines with an application installed matching "Chrome"
+.EXAMPLE
+Get-PDQComputerApplications -Application Chrome
+Returns a list of machines with an application installed matching "Chrome"
 
-    .NOTES
-        Author: Chris Bayliss
-        Version: 1.0
-        Date: 12/05/2019
-    #>
+.NOTES
+Author: Chris Bayliss
+Version: 1.0
+Date: 12/05/2019
+#>
 
     [CmdletBinding(SupportsShouldProcess = $True)]
     param (
         # Target computer to return applications for
         [Parameter(Mandatory = $false,
-            ValueFromPipelineByPropertyName,
-            ParameterSetName = 'Comp',
-            Position = 0)]
+        ValueFromPipelineByPropertyName,
+        ParameterSetName = 'Comp',
+        Position = 0)]
         [string[]][alias('Name')]$Computer,
 
         # Application to search for
         [Parameter(Mandatory = $false,
-            ValueFromPipelineByPropertyName,
-            ParameterSetName = 'App')]
+        ValueFromPipelineByPropertyName,
+        ParameterSetName = 'App')]
         [string[]][alias('PackageName')]$Application,
 
+        [Parameter(Mandatory = $false)]
         [PSCredential]$Credential
     )
 
+    begin {
+        Get-PSPDQConfig
+    }
+
     process {
-        if (!(Test-Path -Path "$($env:AppData)\pspdq\config.json")) {
-            Throw "PSPDQ Configuration file not found in `"$($env:AppData)\pspdq\config.json`", please run Set-PSPDQConfig to configure module settings."
-        }
-        else {
-            $config = Get-Content "$($env:AppData)\pspdq\config.json" | ConvertFrom-Json
-
-            $Server = $config.Server.PDQInventoryServer
-            $DatabasePath = $config.DBPath.PDQInventoryDB
-        }
-
         $results = @()
 
         if ($PSCmdlet.ParameterSetName -eq 'Comp') {

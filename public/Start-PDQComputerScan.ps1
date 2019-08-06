@@ -1,5 +1,5 @@
 function Start-PDQComputerScan {
-    <#
+<#
 .SYNOPSIS
 Scan target machine with specified scan profile.
 
@@ -28,30 +28,22 @@ Date: 12/05/2019
     [CmdletBinding()]
     param (
         [Parameter(Mandatory = $true,
-            ValueFromPipelineByPropertyName,
-            Position = 0)]
+        ValueFromPipelineByPropertyName,
+        Position = 0)]
         [string[]][alias('Name')]$Computer,
 
         [Parameter(Mandatory = $false,
-            Position = 1)]
+        Position = 1)]
         [string]$ScanProfile = "Standard",
 
         [PSCredential]$Credential
     )
+
     begin {
-        if (!(Test-Path -Path "$($env:AppData)\pspdq\config.json")) {
-            Throw "PSPDQ Configuration file not found in `"$($env:AppData)\pspdq\config.json`", please run Set-PSPDQConfig to configure module settings."
-        }
-
-        else {
-            $config = Get-Content "$($env:AppData)\pspdq\config.json" | ConvertFrom-Json
-            $Server = $config.Server.PDQInventoryServer
-        }
+        Get-PSPDQConfig
     }
+
     process {
-
-
-
         $icmParams = @{
             Computer     = $Server
             ScriptBlock  = { PDQInventory.exe ScanComputers -ScanProfile $using:ScanProfile -Computers $using:Computer }
@@ -60,7 +52,4 @@ Date: 12/05/2019
         if ($Credential) { $icmParams['Credential'] = $Credential }
         Invoke-Command @icmParams
     }
-
-
-
 }

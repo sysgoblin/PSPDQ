@@ -3,28 +3,21 @@ function Get-PDQScheduleTargets {
     [CmdletBinding(DefaultParameterSetName = 'Default', SupportsShouldProcess = $True)]
     param (
         [Parameter(Mandatory = $false,
-            ParameterSetName = 'Name')]
+        ParameterSetName = 'Name')]
         [string[]]$ScheduleName,
 
         [Parameter(Mandatory = $false,
-            ParameterSetName = 'ID')]
+        ParameterSetName = 'ID')]
         [int[]]$ScheduleId,
 
         [PSCredential]$Credential
     )
 
+    begin {
+        Get-PSPDQConfig
+    }
+
     process {
-
-        if (!(Test-Path -Path "$($env:AppData)\pspdq\config.json")) {
-            Throw "PSPDQ Configuration file not found in `"$($env:AppData)\pspdq\config.json`", please run Set-PSPDQConfig to configure module settings."
-        }
-        else {
-            $config = Get-Content "$($env:AppData)\pspdq\config.json" | ConvertFrom-Json
-
-            $Server = $config.Server.PDQDeployServer
-            $DatabasePath = $config.DBPath.PDQDeployDB
-        }
-
         $Targets = @()
 
         if ($PSCmdlet.ParameterSetName -eq 'ID') {

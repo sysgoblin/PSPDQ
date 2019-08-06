@@ -1,5 +1,5 @@
 function Set-PSPDQConfig {
-    <#
+<#
 .SYNOPSIS
 Sets configuration for PSPDQ module.
 

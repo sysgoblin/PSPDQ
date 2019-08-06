@@ -1,5 +1,5 @@
 function Get-PDQDeploymentSteps {
-    <#
+<#
 .SYNOPSIS
 Returns deployment steps and their results
 
@@ -29,29 +29,23 @@ Date: 12/05/2019
     [CmdletBinding(SupportsShouldProcess = $True, DefaultParameterSetName = 'Default')]
     param (
         [Parameter(Mandatory = $true,
-            ParameterSetName = 'Default',
-            ValueFromPipelineByPropertyName)]
+        ParameterSetName = 'Default',
+        ValueFromPipelineByPropertyName)]
         [int[]]$DeploymentId,
 
         [Parameter(Mandatory = $false,
-            ParameterSetName = 'Default',
-            ValueFromPipelineByPropertyName)]
+        ParameterSetName = 'Default',
+        ValueFromPipelineByPropertyName)]
         [string[]][alias('Name')]$Computer,
 
         [PSCredential]$Credential
     )
 
+    begin {
+        Get-PSPDQConfig
+    }
+
     process {
-        if (!(Test-Path -Path "$($env:AppData)\pspdq\config.json")) {
-            Throw "PSPDQ Configuration file not found in `"$($env:AppData)\pspdq\config.json`", please run Set-PSPDQConfig to configure module settings."
-        }
-        else {
-            $config = Get-Content "$($env:AppData)\pspdq\config.json" | ConvertFrom-Json
-
-            $Server = $config.Server.PDQDeployServer
-            $DatabasePath = $config.DBPath.PDQDeployDB
-        }
-
         $Steps = @()
 
         foreach ($id in $DeploymentId) {
