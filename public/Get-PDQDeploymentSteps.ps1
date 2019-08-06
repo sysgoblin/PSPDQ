@@ -1,5 +1,5 @@
 function Get-PDQDeploymentSteps {
-<#
+    <#
 .SYNOPSIS
 Returns deployment steps and their results
 
@@ -11,6 +11,9 @@ Specifies deployment ID to return steps for
 
 .PARAMETER Computer
 Specifies computer to return steps for (CASE SENSITIVE)
+
+.PARAMETER Credential
+Specifies a user account that has permissions to perform this action.
 
 .EXAMPLE
 Get-PDQDeployment -Computer WK01 | ? PackageName -like "*Chrome*" | Get-PDQDeploymentSteps
@@ -25,15 +28,17 @@ Date: 12/05/2019
 
     [CmdletBinding(SupportsShouldProcess = $True, DefaultParameterSetName = 'Default')]
     param (
-        [Parameter(Mandatory = $true, 
-        ParameterSetName = 'Default',
-        ValueFromPipelineByPropertyName)] 
+        [Parameter(Mandatory = $true,
+            ParameterSetName = 'Default',
+            ValueFromPipelineByPropertyName)]
         [int[]]$DeploymentId,
 
-        [Parameter(Mandatory = $false, 
-        ParameterSetName = 'Default', 
-        ValueFromPipelineByPropertyName)] 
-        [string[]][alias('Name')]$Computer
+        [Parameter(Mandatory = $false,
+            ParameterSetName = 'Default',
+            ValueFromPipelineByPropertyName)]
+        [string[]][alias('Name')]$Computer,
+
+        [PSCredential]$Credential
     )
 
     process {
@@ -50,20 +55,27 @@ Date: 12/05/2019
         $Steps = @()
 
         foreach ($id in $DeploymentId) {
-            $sql = "SELECT Deployments.DeploymentId, Deployments.PackageId, DeploymentComputers.ShortName, Deployments.PackageName, Deployments.PackageVersion, Deployments.Status, 
+            $sql = "SELECT Deployments.DeploymentId, Deployments.PackageId, DeploymentComputers.ShortName, Deployments.PackageName, Deployments.PackageVersion, Deployments.Status,
                     DeploymentComputerSteps.DeploymentComputerStepId, DeploymentComputerSteps.Number, DeploymentComputerSteps.Title, DeploymentComputerSteps.ReturnCode, DeploymentComputerSteps.Started,
                     DeploymentComputerSteps.Finished, REPLACE(REPLACE(DeploymentComputers.Error,CHAR(13), ' '),CHAR(10),''), DeploymentComputerSteps.IsFailed, DeploymentComputerSteps.Note
                     FROM Deployments
                     INNER JOIN DeploymentComputers ON Deployments.DeploymentId = DeploymentComputers.DeploymentId
                     INNER JOIN DeploymentComputerSteps ON DeploymentComputers.DeploymentComputerId = DeploymentComputerSteps.DeploymentComputerId
                     WHERE DeploymentComputers.DeploymentId = $id"
-                    if ($Computer) {
-                        $sql += " AND DeploymentComputers.ShortName IN ('$Computer')"
-                    }
-            $Steps += Invoke-Command -Computer $Server -ScriptBlock { $args[0] | sqlite3.exe $args[1] } -ArgumentList $sql, $DatabasePath
+            if ($Computer) {
+                $sql += " AND DeploymentComputers.ShortName IN ('$Computer')"
+            }
+
+            $icmParams = @{
+                Computer     = $Server
+                ScriptBlock  = { $args[0] | sqlite3.exe $args[1] }
+                ArgumentList = $sql, $DatabasePath
+            }
+            if ($Credential) { $icmParams['Credential'] = $Credential }
+            $Steps += Invoke-Command @icmParams
         }
 
-        $stepsParsed = $Steps | % {
+        $stepsParsed = $Steps | ForEach-Object {
             $p = $_ -split '\|'
             if ($p[12]) {
                 $p[12] -match '<Message>.*</Message>' | Out-Null

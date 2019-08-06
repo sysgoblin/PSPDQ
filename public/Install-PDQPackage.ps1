@@ -16,6 +16,9 @@ ID number of package to deploy
 .PARAMETER PackageName
 Name of package to deploy
 
+.PARAMETER Credential
+Specifies a user account that has permissions to perform this action.
+
 .EXAMPLE
 Install-PDQPackage -Computer WK01, WK02 -PackageID 101
 Deployes package with ID 101 to targets WK01, WK02
@@ -42,19 +45,21 @@ Date: 12/05/2019
 
     [CmdletBinding(SupportsShouldProcess = $True)]
     param (
-        [Parameter(Mandatory = $true, 
-            ValueFromPipelineByPropertyName)] 
+        [Parameter(Mandatory = $true,
+            ValueFromPipelineByPropertyName)]
         [string[]][alias('Name')]$Computer,
 
-        [Parameter(Mandatory = $true, 
-            ParameterSetName = 'ID', 
-            ValueFromPipelineByPropertyName)] 
+        [Parameter(Mandatory = $true,
+            ParameterSetName = 'ID',
+            ValueFromPipelineByPropertyName)]
         [int[]]$PackageID,
 
-        [Parameter(Mandatory = $true, 
-            ParameterSetName = 'Name', 
-            ValueFromPipelineByPropertyName)] 
-        [string[]]$PackageName
+        [Parameter(Mandatory = $true,
+            ParameterSetName = 'Name',
+            ValueFromPipelineByPropertyName)]
+        [string[]]$PackageName,
+
+        [PSCredential]$Credential
     )
 
     process {
@@ -72,12 +77,19 @@ Date: 12/05/2019
         if ($PSCmdlet.ParameterSetName -eq 'ID') {
             $Package = @()
 
-            $PackageID | % {
+            $PackageID | Foreach-Object {
                 $i = $_
                 $sql = "SELECT PackageID, Name FROM Packages WHERE PackageID = $i"
-                $packages = Invoke-Command -Computer $Server -ScriptBlock { $args[0] | sqlite3.exe $args[1] } -ArgumentList $sql, $DatabasePath
 
-                $packagesParsed = $packages | % {
+                $icmParams = @{
+                    Computer     = $Server
+                    ScriptBlock  = { $args[0] | sqlite3.exe $args[1] }
+                    ArgumentList = $sql, $DatabasePath
+                }
+                if ($Credential) { $icmParams['Credential'] = $Credential }
+                $packages = Invoke-Command @icmParams
+
+                $packagesParsed = $packages | ForEach-Object {
                     $p = $_ -split '\|'
                     [PSCustomObject]@{
                         PackageID   = $p[0]
@@ -88,17 +100,24 @@ Date: 12/05/2019
                 $Package += ($packagesParsed).PackageName
             }
         }
-        
+
         if ($PSCmdlet.ParameterSetName -eq 'Name') {
             $Package = @()
 
-            $PackageName | % {
+            $PackageName | ForEach-Object {
                 try {
                     $n = $_
                     $sql = "SELECT PackageID, Name, Version FROM Packages WHERE Name LIKE '%%$n%%'"
-                    $packages = Invoke-Command -Computer $Server -ScriptBlock { $args[0] | sqlite3.exe $args[1] } -ArgumentList $sql, $DatabasePath
-                
-                    $packagesParsed = $packages | % {
+
+                    $icmParams = @{
+                        Computer     = $Server
+                        ScriptBlock  = { $args[0] | sqlite3.exe $args[1] }
+                        Argumentlist = $sql, $DatabasePath
+                    }
+                    if ($Credential) { $icmParams['Credential'] = $Credential }
+                    $packages = Invoke-Command @icmParams
+
+                    $packagesParsed = $packages | ForEach-Object {
                         $p = $_ -split '\|'
                         [PSCustomObject]@{
                             PackageID   = $p[0]
@@ -106,12 +125,12 @@ Date: 12/05/2019
                             Version     = $p[2]
                         }
                     }
-                
+
                     if ($packagesParsed.Count -gt 1) {
-                        Write-Output "$($packagesParsed | out-string)"
+                        Write-Output "$($packagesParsed | Out-String)"
                         $selection = Read-Host "Multiple matches, select Package ID"
-                
-                        $Package += ($packagesParsed | ? PackageID -eq $selection).PackageName
+
+                        $Package += ($packagesParsed | Where-Object PackageID -eq $selection).PackageName
                     }
                     else {
                         $Package += ($packagesParsed).PackageName
@@ -122,9 +141,17 @@ Date: 12/05/2019
                 }
             }
         }
-    
+
         foreach ($pkg in $Package) {
-            PDQDeploy.exe Deploy -Package $pkg -Targets $Computer
+
+            $icmParams = @{
+                Computer     = $Server
+                ScriptBlock  = { PDQDeploy.exe Deploy -Package $Using:pkg -Targets $using:Computer }
+                ArgumentList = $pkg, $computer
+            }
+            if ($Credential) { $icmParams['Credential'] = $Credential }
+            Write-Verbose "Deploying $pkg to Target $Computer"
+            Invoke-Command @icmParams
         }
     }
 }

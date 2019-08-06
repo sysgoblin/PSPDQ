@@ -1,5 +1,5 @@
 function Get-PDQPackage {
-<#
+    <#
 .SYNOPSIS
 Get PDQ package information
 
@@ -17,6 +17,9 @@ Returns a list of approved PDQ Deploy packages
 
 .PARAMETER AwaitingApproval
 Returns a list of PDQ Deploy packages awaiting approval
+
+.PARAMETER Credential
+Specifies a user account that has permissions to perform this action.
 
 .EXAMPLE
 Get-PDQPackage -PackageName "Chrome Enterprise 74"
@@ -37,21 +40,23 @@ Date: 12/05/2019
 
     [CmdletBinding(SupportsShouldProcess = $True)]
     param (
-        [Parameter(Mandatory = $false, 
-        ParameterSetName = 'ID')] 
+        [Parameter(Mandatory = $false,
+            ParameterSetName = 'ID')]
         [int]$PackageID,
 
-        [Parameter(Mandatory = $false, 
-        ParameterSetName = 'Name')] 
+        [Parameter(Mandatory = $false,
+            ParameterSetName = 'Name')]
         [string]$PackageName,
 
-        [Parameter(Mandatory = $false, 
-        ParameterSetName = 'Approved')] 
+        [Parameter(Mandatory = $false,
+            ParameterSetName = 'Approved')]
         [switch]$Approved,
 
-        [Parameter(Mandatory = $false, 
-        ParameterSetName = 'Waiting')] 
-        [switch]$AwaitingApproval
+        [Parameter(Mandatory = $false,
+            ParameterSetName = 'Waiting')]
+        [switch]$AwaitingApproval,
+
+        [PSCredential]$Credential
     )
 
     process {
@@ -68,7 +73,7 @@ Date: 12/05/2019
         if ($PSCmdlet.ParameterSetName -eq 'Waiting') {
             $sql = "SELECT Packages.PackageId, Packages.Name, Packages.Version, LibraryPackageVersions.VersionNumber
             FROM Packages
-            INNER JOIN LibraryPackageVersions ON Packages.NewLibraryPackageVersionId = LibraryPackageVersions.LibraryPackageVersionId 
+            INNER JOIN LibraryPackageVersions ON Packages.NewLibraryPackageVersionId = LibraryPackageVersions.LibraryPackageVersionId
             WHERE Packages.LibraryPackageVersionId < Packages.NewLibraryPackageVersionId"
         }
 
@@ -77,25 +82,31 @@ Date: 12/05/2019
         }
 
         if ($PSCmdlet.ParameterSetName -eq 'Name') {
-            $sql = "SELECT PackageID, Name, Version, Path, REPLACE(REPLACE(Description,CHAR(13),' '),CHAR(10),'')Description 
+            $sql = "SELECT PackageID, Name, Version, Path, REPLACE(REPLACE(Description,CHAR(13),' '),CHAR(10),'')Description
             FROM Packages
             WHERE Name LIKE '%%$PackageName%%'"
         }
 
         if ($PSCmdlet.ParameterSetName -eq 'ID') {
-            $sql = "SELECT PackageID, Name, Version, Path, REPLACE(REPLACE(Description,CHAR(13),' '),CHAR(10),'')Description 
+            $sql = "SELECT PackageID, Name, Version, Path, REPLACE(REPLACE(Description,CHAR(13),' '),CHAR(10),'')Description
             FROM Packages
             WHERE PackageId = $PackageID"
         }
-    
+
         if (!(Test-Path -Path "\\$($Server)\c$\ProgramData\Admin Arsenal\PDQ Deploy\Database.db")) {
             Write-Error -Message "Unable to locate database. Ensure you have access and the path entered is correct."
         }
 
-        $packages = Invoke-Command -Computer $Server -ScriptBlock { $args[0] | sqlite3.exe $args[1] } -ArgumentList $sql, $DatabasePath
+        $icmParams = @{
+            Computer     = $Server
+            ScriptBlock  = { $args[0] | sqlite3.exe $args[1] }
+            ArgumentList = $sql, $DatabasePath
+        }
+        if ($Credential) { $icmParams['Credential'] = $Credential }
+        $packages = Invoke-Command @icmParams
 
         if ($AwaitingApproval) {
-            $packagesParsed = $packages | % {
+            $packagesParsed = $packages | ForEach-Object {
                 $p = $_ -split '\|'
                 [PSCustomObject]@{
                     PackageID   = $p[0]
@@ -106,7 +117,7 @@ Date: 12/05/2019
             }
         }
         else {
-            $packagesParsed = $packages | % {
+            $packagesParsed = $packages | ForEach-Object {
                 $p = $_ -split '\|'
                 [PSCustomObject]@{
                     PackageID   = $p[0]
@@ -115,9 +126,9 @@ Date: 12/05/2019
                     Path        = $p[3]
                     Description = $p[4]
                 }
-            }        
+            }
         }
-        
-        return $packagesParsed
-    } 
+
+        $packagesParsed
+    }
 }

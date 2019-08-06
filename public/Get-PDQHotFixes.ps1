@@ -1,5 +1,5 @@
 function Get-PDQHotFixes {
-<#
+    <#
 .SYNOPSIS
 Get information on hotfix/patches installed on specified target
 
@@ -11,6 +11,10 @@ Target computer to return hotfix/patch information for
 
 .PARAMETER HotFix
 Specified hotfix/patch to return information for
+
+.PARAMETER Credential
+Specifies a user account that has permissions to perform this action.
+
 
 .EXAMPLE
 Get-PDQHotFixes -Computer WK01
@@ -30,18 +34,20 @@ Date: 12/05/2019
 
     [CmdletBinding(DefaultParameterSetName = 'Default')]
     param (
-        [Parameter(Mandatory = $false, 
-        ParameterSetName = 'Comp', 
-        ValueFromPipelineByPropertyName,
-        Position = 0)] 
+        [Parameter(Mandatory = $false,
+            ParameterSetName = 'Comp',
+            ValueFromPipelineByPropertyName,
+            Position = 0)]
         [string][alias('Name')]$Computer,
 
-        [Parameter(Mandatory = $false, 
-        ParameterSetName = 'HF', 
-        ValueFromPipelineByPropertyName)] 
-        [string]$HotFix
+        [Parameter(Mandatory = $false,
+            ParameterSetName = 'HF',
+            ValueFromPipelineByPropertyName)]
+        [string]$HotFix,
+
+        [PSCredential]$Credential
     )
-    
+
     process {
         if (!(Test-Path -Path "$($env:AppData)\pspdq\config.json")) {
             Throw "PSPDQ Configuration file not found in `"$($env:AppData)\pspdq\config.json`", please run Set-PSPDQConfig to configure module settings."
@@ -69,9 +75,15 @@ Date: 12/05/2019
             ORDER BY hotfixes.InstalledOn DESC"
         }
 
-        $HotFixes = Invoke-Command -Computer $Server -ScriptBlock { $args[0] | sqlite3.exe $args[1] } -ArgumentList $sql, $DatabasePath
+        $icmParams = @{
+            Computer     = $Server
+            ScriptBlock  = { $args[0] | sqlite3.exe $args[1] }
+            ArgumentList = $sql, $DatabasePath
+        }
+        if ($Credential) { $icmParams['Credential'] = $Credential }
+        $HotFixes = Invoke-Command @icmParams
 
-        $HotFixesParsed = $HotFixes | % {
+        $HotFixesParsed = $HotFixes | ForEach-Object {
             $p = $_ -split '\|'
             [PSCustomObject]@{
                 HotFixID    = $p[0]
@@ -88,6 +100,6 @@ Date: 12/05/2019
             }
         }
 
-        return $HotFixesParsed
+        $HotFixesParsed
     }
 }
