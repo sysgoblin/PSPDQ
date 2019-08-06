@@ -1,59 +1,54 @@
 function Get-PDQCollection {
-    <#
-    .SYNOPSIS
-        Returns information on PDQ Inventory collections
+<#
+.SYNOPSIS
+Returns information on PDQ Inventory collections
 
-    .DESCRIPTION
-        Returns information on either all or specified PDQ Inventory collections
+.DESCRIPTION
+Returns information on either all or specified PDQ Inventory collections
 
-    .PARAMETER Credential
-        Specifies a user account that has permissions to perform this action.
+.PARAMETER Credential
+Specifies a user account that has permissions to perform this action.
 
-    .EXAMPLE
-        Get-PDQCollection -CollectionName "Online"
-        Returns information on all collections matching the string "Online"
+.EXAMPLE
+Get-PDQCollection -CollectionName "Online"
+Returns information on all collections matching the string "Online"
 
-    .NOTES
-        Author: Chris Bayliss
-    #>
-
+.NOTES
+Author: Chris Bayliss
+#>
     [CmdletBinding()]
     param (
         # Collection name to query
         [Parameter(Mandatory = $false,
-            ParameterSetName = 'ColName')]
+        ParameterSetName = 'ColName')]
         [string[]]$CollectionName,
 
         #Collection ID number to query
         [Parameter(Mandatory = $false,
-            ParameterSetName = 'ColID')]
-        [int[]]$CollectionID,
+        ParameterSetName = 'ColID')]
+        [int[]]$CollectionId,
 
         # Returns information on all collections
         [Parameter(Mandatory = $false,
-            ParameterSetName = 'All')]
+        ParameterSetName = 'All')]
         [switch]$All,
 
+        # Properties to return
         [Parameter(Mandatory = $false)]
         [ValidateSet('Path', 'IsDrillDown', 'Created', 'Modified', 'ParentId', 'Type', 'Description', 'IsEnabled')]
         [string[]]$Properties,
 
+        # Credentials for invoke-command
+        [Parameter(Mandatory = $false)]
         [PSCredential]$Credential
     )
 
+    begin {
+        Get-PSPDQConfig
+    }
+
     process {
-
-        if (!(Test-Path -Path "$($env:AppData)\pspdq\config.json")) {
-            Throw "PSPDQ Configuration file not found in `"$($env:AppData)\pspdq\config.json`", please run Set-PSPDQConfig to configure module settings."
-        }
-        else {
-            $config = Get-Content "$($env:AppData)\pspdq\config.json" | ConvertFrom-Json
-
-            $Server = $config.Server.PDQInventoryServer
-            $DatabasePath = $config.DBPath.PDQInventoryDB
-        }
-
-        if ($PSBoundParameters.ContainsKey($Properties)) {
+        if ($PSBoundParameters.Properties) {
             $defaultProps = 'CollectionId', 'Name', 'Type', 'ComputerCount'
             $allProps = $defaultProps + $Properties
         }
@@ -61,13 +56,11 @@ function Get-PDQCollection {
             $allProps = 'CollectionId', 'Name', 'Type', 'ComputerCount'
         }
 
-        if ($PSCmdlet.ParameterSetName -eq 'ColName') {
+        if ($PSBoundParameters.CollectionName) {
             $Collections = @()
 
             foreach ($col in $CollectionName) {
-                $sql = "SELECT " + ($allProps -join ', ') + "
-                        FROM Collections
-                        WHERE Name LIKE '%%$col%%'"
+                $sql = "SELECT " + ($allProps -join ', ') + " FROM Collections WHERE Name LIKE '%%$col%%'"
 
                 $icmParams = @{
                     Computer     = $Server
@@ -80,13 +73,11 @@ function Get-PDQCollection {
             }
         }
 
-        if ($PSCmdlet.ParameterSetName -eq 'ColID') {
+        if ($PSBoundParameters.CollectionId) {
             $Collections = @()
 
             foreach ($i in $CollectionID) {
-                $sql = "SELECT " + ($allProps -join ', ') + "
-                        FROM Collections
-                        WHERE CollectionId = $i"
+                $sql = "SELECT " + ($allProps -join ', ') + " FROM Collections WHERE CollectionId = $i"
 
                 $icmParams = @{
                     Computer     = $Server
@@ -100,8 +91,7 @@ function Get-PDQCollection {
         }
 
         if ($PSCmdlet.ParameterSetName -eq 'All') {
-            $sql = "SELECT " + ($allProps -join ', ') + "
-            FROM Collections"
+            $sql = "SELECT " + ($allProps -join ', ') + " FROM Collections"
 
             $icmParams = @{
                 Computer     = $Server
@@ -121,7 +111,9 @@ function Get-PDQCollection {
             }
             $collectionsParsed += $colObj
         }
+    }
 
-        $collectionsParsed
+    end {
+        return $collectionsParsed
     }
 }

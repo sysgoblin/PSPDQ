@@ -1,59 +1,53 @@
 function Get-PDQCollectionMembers {
-    <#
-    .SYNOPSIS
-        Returns members of specified PDQ Inventory collection
+<#
+.SYNOPSIS
+Returns members of specified PDQ Inventory collection
 
-    .DESCRIPTION
-        Returns members of specified PDQ Inventory collection
-    .PARAMETER Credential
-        Specifies a user account that has permissions to perform this action.
-    .EXAMPLE
-        Get-PDQCollectionMembers -CollectionID 1
+.DESCRIPTION
+Returns members of specified PDQ Inventory collection
 
-    .NOTES
-        Author: Chris Bayliss
-    #>
+.PARAMETER Credential
+Specifies a user account that has permissions to perform this action.
 
+.EXAMPLE
+Get-PDQCollectionMembers -CollectionID 1
 
+.NOTES
+Author: Chris Bayliss
+#>
     [CmdletBinding()]
     param (
         # Name of collection to return members of
         [Parameter(Mandatory = $false,
-            ParameterSetName = 'ColName',
-            ValueFromPipelineByPropertyName,
-            Position = 0)]
+        ParameterSetName = 'ColName',
+        ValueFromPipelineByPropertyName,
+        Position = 0)]
         [string]$CollectionName,
 
         # ID of collection to return members of
         [Parameter(Mandatory = $false,
-            ParameterSetName = 'ColID',
-            ValueFromPipelineByPropertyName)]
+        ParameterSetName = 'ColID',
+        ValueFromPipelineByPropertyName)]
         [int]$CollectionID,
 
         [Parameter(Mandatory = $false)]
         [ValidateSet('Added', 'BootTime', 'Manufacturer', 'Memory', 'SerialNumber', 'OSArchitecture',
-            'IPAddress', 'CurrentUser', 'MacAddress', 'DotNetVersions', 'NeedsReboot', 'PSVersion', 'ADLogonServer',
-            'SMBv1Enabled', 'SimpleReasonForReboot', 'IsOnline', 'OSVersion', 'OSSerialNumber', 'SystemDrive',
-            'IEVersion', 'HeartbeatDate', 'ADDisplayName', 'BiosVersion', 'BiosManufacturer', 'Chassis', 'ADLogonServer',
-            'AddedFrom', 'ADIsDisabled')]
+        'IPAddress', 'CurrentUser', 'MacAddress', 'DotNetVersions', 'NeedsReboot', 'PSVersion', 'ADLogonServer',
+        'SMBv1Enabled', 'SimpleReasonForReboot', 'IsOnline', 'OSVersion', 'OSSerialNumber', 'SystemDrive',
+        'IEVersion', 'HeartbeatDate', 'ADDisplayName', 'BiosVersion', 'BiosManufacturer', 'Chassis', 'ADLogonServer',
+        'AddedFrom', 'ADIsDisabled')]
         [string[]]$Properties,
 
+        [Parameter(Mandatory = $false)]
         [PSCredential]$Credential
     )
 
+    begin {
+        Get-PSPDQConfig
+    }
+
     process {
-
-        if (!(Test-Path -Path "$($env:AppData)\pspdq\config.json")) {
-            Throw "PSPDQ Configuration file not found in `"$($env:AppData)\pspdq\config.json`", please run Set-PSPDQConfig to configure module settings."
-        }
-        else {
-            $config = Get-Content "$($env:AppData)\pspdq\config.json" | ConvertFrom-Json
-
-            $Server = $config.Server.PDQInventoryServer
-            $DatabasePath = $config.DBPath.PDQInventoryDB
-        }
-
-        if ($PSBoundParameters.ContainsKey('Properties')) {
+        if ($PSBoundParameters.Properties) {
 
             $defaultProps = "ComputerId", "Name", "Model", "OSName", "OSServicePack"
             $allProps = $defaultProps + $Properties
@@ -62,7 +56,7 @@ function Get-PDQCollectionMembers {
             $allProps = "ComputerId", "Name", "Model", "OSName", "OSServicePack"
         }
 
-        if ($PSCmdlet.ParameterSetName -eq 'ColName') {
+        if ($PSBoundParameters.CollectionName) {
             $sql = "SELECT " + ($allProps -join ', ') + "
                     FROM Computers
                     WHERE Computers.ComputerId IN (
@@ -90,7 +84,7 @@ function Get-PDQCollectionMembers {
             $ColName = Invoke-Command @icmParams
         }
 
-        if ($PSCmdlet.ParameterSetName -eq 'ColID') {
+        if ($PSBoundParameters.CollectionID) {
             $sql = "SELECT " + ($allProps -join ', ') + "
                     FROM Computers
                     WHERE Computers.ComputerId IN (
@@ -131,4 +125,6 @@ function Get-PDQCollectionMembers {
             $computersParsed
         }
     }
+
+    end {}
 }
