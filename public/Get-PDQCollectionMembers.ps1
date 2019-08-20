@@ -66,9 +66,9 @@ Author: Chris Bayliss
                     WHERE Collections.Name = '$CollectionName' AND IsMember = 1)"
 
             $icmParams = @{
-                Computer     = $Server
+                Computer     = $invServer
                 ScriptBlock  = { $args[0] | sqlite3.exe $args[1] }
-                ArgumentList = $sql, $DatabasePath
+                ArgumentList = $sql, $invDatabasePath
             }
             if ($Credential) { $icmParams['Credential'] = $Credential }
             $Computers = Invoke-Command @icmParams
@@ -76,9 +76,9 @@ Author: Chris Bayliss
             $nsql = "SELECT Name FROM Collections WHERE Name = '$CollectionName'"
 
             $icmParams = @{
-                Computer     = $Server
+                Computer     = $invServer
                 ScriptBlock  = { $args[0] | sqlite3.exe $args[1] }
-                ArgumentList = $nsql, $DatabasePath
+                ArgumentList = $nsql, $invDatabasePath
             }
             if ($Credential) { $icmParams['Credential'] = $Credential }
             $ColName = Invoke-Command @icmParams
@@ -94,9 +94,9 @@ Author: Chris Bayliss
                     )"
 
             $icmParams = @{
-                Computer     = $Server
+                Computer     = $invServer
                 ScriptBlock  = { $args[0] | sqlite3.exe $args[1] }
-                ArgumentList = $sql, $DatabasePath
+                ArgumentList = $sql, $invDatabasePath
             }
             if ($Credential) { $icmParams['Credential'] = $Credential }
             $Computers = Invoke-Command @icmParams
@@ -104,9 +104,9 @@ Author: Chris Bayliss
             $nsql = "SELECT Name FROM Collections WHERE CollectionId = $CollectionID"
 
             $icmParams = @{
-                Computer     = $Server
+                Computer     = $invServer
                 ScriptBlock  = { $args[0] | sqlite3.exe $args[1] }
-                ArgumentList = $nsql, $DatabasePath
+                ArgumentList = $nsql, $invDatabasePath
             }
             if ($Credential) { $icmParams['Credential'] = $Credential }
             $ColName = Invoke-Command @icmParams

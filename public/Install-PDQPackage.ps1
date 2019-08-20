@@ -75,9 +75,9 @@ Date: 12/05/2019
                 $sql = "SELECT PackageID, Name FROM Packages WHERE PackageID = $i"
 
                 $icmParams = @{
-                    Computer     = $Server
+                    Computer     = $depServer
                     ScriptBlock  = { $args[0] | sqlite3.exe $args[1] }
-                    ArgumentList = $sql, $DatabasePath
+                    ArgumentList = $sql, $depDatabasePath
                 }
                 if ($Credential) { $icmParams['Credential'] = $Credential }
                 $packages = Invoke-Command @icmParams
@@ -103,9 +103,9 @@ Date: 12/05/2019
                     $sql = "SELECT PackageID, Name, Version FROM Packages WHERE Name LIKE '%%$n%%'"
 
                     $icmParams = @{
-                        Computer     = $Server
+                        Computer     = $depServer
                         ScriptBlock  = { $args[0] | sqlite3.exe $args[1] }
-                        Argumentlist = $sql, $DatabasePath
+                        Argumentlist = $sql, $depDatabasePath
                     }
                     if ($Credential) { $icmParams['Credential'] = $Credential }
                     $packages = Invoke-Command @icmParams
@@ -138,7 +138,7 @@ Date: 12/05/2019
         foreach ($pkg in $Package) {
 
             $icmParams = @{
-                Computer     = $Server
+                Computer     = $depServer
                 ScriptBlock  = { PDQDeploy.exe Deploy -Package $Using:pkg -Targets $using:Computer }
                 ArgumentList = $pkg, $computer
             }

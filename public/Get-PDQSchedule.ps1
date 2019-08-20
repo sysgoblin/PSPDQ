@@ -46,9 +46,9 @@ function Get-PDQSchedule {
                     INNER JOIN ScheduleTriggers ON ScheduleTriggers.ScheduleTriggerSetId = Schedules.ScheduleTriggerSetId"
 
             $icmParams = @{
-                Computer     = $Server
+                Computer     = $depServer
                 ScriptBlock  = { $args[0] | sqlite3.exe $args[1] }
-                ArgumentList = $sql, $DatabasePath
+                ArgumentList = $sql, $depDatabasePath
             }
             if ($Credential) { $icmParams['Credential'] = $Credential }
             $Schedules += Invoke-Command @icmParams

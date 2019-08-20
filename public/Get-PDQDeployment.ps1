@@ -77,9 +77,9 @@ Date: 12/05/2019
                 ORDER BY Deployments.Finished DESC"
 
                 $icmParams = @{
-                    Computer     = $Server
+                    Computer     = $depServer
                     ScriptBlock  = { $args[0] | sqlite3.exe $args[1] }
-                    ArgumentList = $sql, $DatabasePath
+                    ArgumentList = $sql, $depDatabasePath
                 }
                 if ($Credential) { $icmParams['Credential'] = $Credential }
                 $Deployments += Invoke-Command @icmParams
@@ -121,9 +121,9 @@ Date: 12/05/2019
         if ($PSCmdlet.ParameterSetName -ne 'Comp') {
 
             $icmParams = @{
-                Computer     = $Server
+                Computer     = $depServer
                 ScriptBlock  = { $args[0] | sqlite3.exe $args[1] }
-                ArgumentList = $sql, $DatabasePath
+                ArgumentList = $sql, $depDatabasePath
             }
             if ($Credential) { $icmParams['Credential'] = $Credential }
             $Deployments = Invoke-Command @icmParams

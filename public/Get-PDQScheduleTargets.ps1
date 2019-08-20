@@ -31,9 +31,9 @@ function Get-PDQScheduleTargets {
                 WHERE ScheduleTargets.ScheduleId = $id"
 
                 $icmParams = @{
-                    Computer     = $Server
+                    Computer     = $depServer
                     ScriptBlock  = { $args[0] | sqlite3.exe $args[1] }
-                    ArgumentList = $sql, $DatabasePath
+                    ArgumentList = $sql, $depDatabasePath
                 }
                 if ($Credential) { $icmParams['Credential'] = $Credential }
                 $Targets += Invoke-Command @icmParams
@@ -51,9 +51,9 @@ function Get-PDQScheduleTargets {
             WHERE Schedules.Name LIKE '%%$Name%%'"
 
                 $icmParams = @{
-                    Computer     = $Server
+                    Computer     = $depServer
                     ScriptBlock  = { $args[0] | sqlite3.exe $args[1] }
-                    ArgumentList = $sql, $DatabasePath
+                    ArgumentList = $sql, $depDatabasePath
                 }
                 if ($Credential) { $icmParams['Credential'] = $Credential }
                 $Targets += Invoke-Command @icmParams

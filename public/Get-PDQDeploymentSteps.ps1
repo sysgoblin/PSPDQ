@@ -61,9 +61,9 @@ Date: 12/05/2019
             }
 
             $icmParams = @{
-                Computer     = $Server
+                Computer     = $depServer
                 ScriptBlock  = { $args[0] | sqlite3.exe $args[1] }
-                ArgumentList = $sql, $DatabasePath
+                ArgumentList = $sql, $depDatabasePath
             }
             if ($Credential) { $icmParams['Credential'] = $Credential }
             $Steps += Invoke-Command @icmParams

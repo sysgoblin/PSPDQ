@@ -87,14 +87,14 @@ Date: 12/05/2019
             WHERE PackageId = $PackageID"
         }
 
-        if (!(Test-Path -Path "\\$($Server)\c$\ProgramData\Admin Arsenal\PDQ Deploy\Database.db")) {
+        if (!(Test-Path -Path "\\$($depServer)\c$\ProgramData\Admin Arsenal\PDQ Deploy\Database.db")) {
             Write-Error -Message "Unable to locate database. Ensure you have access and the path entered is correct."
         }
 
         $icmParams = @{
-            Computer     = $Server
+            Computer     = $depServer
             ScriptBlock  = { $args[0] | sqlite3.exe $args[1] }
-            ArgumentList = $sql, $DatabasePath
+            ArgumentList = $sql, $depDatabasePath
         }
         if ($Credential) { $icmParams['Credential'] = $Credential }
         $packages = Invoke-Command @icmParams

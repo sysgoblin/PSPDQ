@@ -46,7 +46,7 @@ Date: 12/05/2019
 
     process {
         $icmParams = @{
-            Computer     = $Server
+            Computer     = $invServer
             ScriptBlock  = { PDQInventory.exe ScanCollections -ScanProfile $using:ScanProfile -Collections $using:Collection }
             ArgumentList = $ScanProfile, $Collection
         }

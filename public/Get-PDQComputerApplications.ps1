@@ -61,9 +61,9 @@ Date: 12/05/2019
                 )"
 
                 $icmParams = @{
-                    Computer     = $Server
+                    Computer     = $invServer
                     ScriptBlock  = { $args[0] | sqlite3.exe $args[1] }
-                    ArgumentList = $sql, $DatabasePath
+                    ArgumentList = $sql, $invDatabasePath
                 }
                 if ($Credential) { $icmParams['Credential'] = $Credential }
                 $results += Invoke-Command @icmParams
@@ -78,9 +78,9 @@ Date: 12/05/2019
                 WHERE Applications.Name LIKE '%%$App%%'"
 
                 $icmParams = @{
-                    Computer     = $Server
+                    Computer     = $invServer
                     ScriptBlock  = { $args[0] | sqlite3.exe $args[1] }
-                    ArgumentList = $sql, $DatabasePath
+                    ArgumentList = $sql, $invDatabasePath
                 }
                 if ($Credential) { $icmParams['Credential'] = $Credential }
                 $results += Invoke-Command @icmPArams
