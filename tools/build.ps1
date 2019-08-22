@@ -6,4 +6,4 @@ param(
 )
 
 Import-Module psake;Import-Module Pester;Import-Module PSScriptAnalyzer
-Invoke-psake -buildFile "$PSScriptRoot\_build.psake.ps1" -taskList $Task -Verbose #:$VerbosePreference
+Invoke-psake -buildFile "$PSScriptRoot\_build.psake.ps1" -taskList $Task -Verbose:$VerbosePreference
