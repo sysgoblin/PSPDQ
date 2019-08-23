@@ -52,8 +52,8 @@ Author: Chris Bayliss
         [ValidateSet('Added', 'BootTime', 'Manufacturer', 'Memory', 'SerialNumber', 'OSArchitecture',
         'IPAddress', 'CurrentUser', 'MacAddress', 'DotNetVersions', 'NeedsReboot', 'PSVersion', 'ADLogonServer',
         'SMBv1Enabled', 'SimpleReasonForReboot', 'IsOnline', 'OSVersion', 'OSSerialNumber', 'SystemDrive',
-        'IEVersion', 'HeartbeatDate', 'ADDisplayName', 'BiosVersion', 'BiosManufacturer', 'Chassis', 'ADLogonServer',
-        'AddedFrom', 'ADIsDisabled')]
+        'IEVersion', 'HeartbeatDate', 'ADDisplayName', 'BiosVersion', 'BiosManufacturer', 'Chassis',
+        'AddedFrom', 'ADIsDisabled', 'SuccessfulScanDate', 'ADSyncDate')]
         [string[]]$Properties,
 
         [Parameter(Mandatory = $false)]
