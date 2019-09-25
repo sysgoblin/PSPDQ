@@ -1,30 +1,30 @@
 function Get-PDQComputerInfo {
     [CmdletBinding()]
     param (
-        [Parameter(Mandatory = $true)]    
-        [string]$Computer,
-        
         [Parameter(Mandatory = $true)]
-        [ValidateSet("Tasks", "Services", "LocalUsers", "LocalGroups")]
+        [string]$Computer,
+
+        [Parameter(Mandatory = $true)]
+        [ValidateSet("Tasks", "Services", "LocalUsers", "LocalGroups", "Disks")]
         [string]$Information,
 
         [Parameter(Mandatory = $false)]
         [PSCredential]$Credential
     )
-    
+
     begin {
         Get-PSPDQConfig
     }
-    
+
     process {
 
         switch ($Information) {
             Tasks {
-                $sql = "SELECT 
-                WindowsTaskSchedules.ComputerId, 
+                $sql = "SELECT
+                WindowsTaskSchedules.ComputerId,
                 Computers.Name,
-                WindowsTaskSchedules.TaskName, 
-                WindowsTaskSchedules.Status, 
+                WindowsTaskSchedules.TaskName,
+                WindowsTaskSchedules.Status,
                 WindowsTaskSchedules.NextRunTime,
                 WindowsTaskSchedules.Folder
                 FROM WindowsTaskSchedules
@@ -55,11 +55,11 @@ function Get-PDQComputerInfo {
             }
 
             Services {
-                $sql = "SELECT 
-                Services.ComputerId, 
+                $sql = "SELECT
+                Services.ComputerId,
                 Computers.Name,
-                Services.Name, 
-                Services.Title, 
+                Services.Name,
+                Services.Title,
                 Services.Account,
                 Services.StartMode,
                 Services.PathName,
@@ -123,10 +123,10 @@ function Get-PDQComputerInfo {
                 }
 
                 $cId = $groupsParsed[0].ComputerID
-                $mSql = "SELECT 
-                LocalGroupMembers.computerid, 
-                LocalGroupMembers.LocalGroupId, 
-                LocalGroupMembers.GroupName, 
+                $mSql = "SELECT
+                LocalGroupMembers.computerid,
+                LocalGroupMembers.LocalGroupId,
+                LocalGroupMembers.GroupName,
                 LocalGroupMembers.UserDomain || '\' || LocalGroupMembers.UserName as 'User'
                 FROM LocalGroupMembers
                 INNER JOIN Computers on LocalGroupMembers.ComputerId = computers.ComputerId
@@ -157,11 +157,11 @@ function Get-PDQComputerInfo {
             }
 
             LocalUsers {
-                $sql = "SELECT 
-                LocalUsers.ComputerId, 
+                $sql = "SELECT
+                LocalUsers.ComputerId,
                 Computers.Name,
-                LocalUsers.UserName, 
-                LocalUsers.Description, 
+                LocalUsers.UserName,
+                LocalUsers.Description,
                 LocalUsers.IsDisabled,
                 LocalUsers.SID
                 FROM LocalUsers
@@ -189,10 +189,69 @@ function Get-PDQComputerInfo {
 
                 $out = $usersParsed
             }
+
+            Disks {
+                $sql = "SELECT
+                LogicalDisks.ComputerId,
+                Computers.Name,
+                DiskDrives.DiskDeviceId,
+                DiskDrives.Model,
+                DiskDrives.InterfaceType,
+                DiskDrives.SerialNumber,
+                DiskDrives.SmartStatus,
+                DiskDrives.PhysicalDiskType,
+                LogicalDisks.FileSystem,
+                LogicalDisks.Size,
+                LogicalDisks.FreeSpace,
+                LogicalDisks.EncryptionMethod,
+                LogicalDisks.BitLockerVersion,
+                LogicalDisks.PercentageEncrypted,
+                LogicalDisks.KeyProtectors,
+                LogicalDisks.ConversionStatus,
+                LogicalDisks.LogicalDeviceId
+                FROM LogicalDisks
+                INNER JOIN Computers ON LogicalDisks.ComputerId = Computers.ComputerId
+                INNER JOIN DiskDrives ON LogicalDisks.ComputerId = DiskDrives.ComputerId
+                WHERE Computers.name LIKE '%%$Computer%%'
+                "
+
+                $icmParams = @{
+                    Computer     = $invServer
+                    ScriptBlock  = { $args[0] | sqlite3.exe $args[1] }
+                    ArgumentList = $sql, $invDatabasePath
+                }
+                if ($Credential) { $icmParams['Credential'] = $Credential }
+                $disks = Invoke-Command @icmParams
+
+                $disksParsed = $disks | ForEach-Object {
+                    $d = $_ -split '\|'
+                    [PSCustomObject]@{
+                        ComputerId          = $d[0]
+                        Computer            = $d[1]
+                        Model               = $d[3]
+                        InterfaceType       = $d[4]
+                        SmartStatus         = $d[6]
+                        DriveLetter         = $d[16]
+                        PhysicalDiskType    = $d[7]
+                        FileSystem          = $d[8]
+                        Size                = $d[9]
+                        FreeSpace           = $d[10]
+                        FreeSpacePercent    = ($d[10]/$d[9]).ToString("P")
+                        SerialNumber        = $d[5]
+                        EncryptionMethod    = $d[11]
+                        BitLockerVersion    = $d[12]
+                        PercentageEncrypted = $d[13]
+                        KeyProtectors       = $d[14]
+                        ConversionStatus    = $d[15]
+                    }
+                }
+
+                $out = $disksParsed
+            }
         }
 
     }
-    
+
     end {
         return $out
     }
